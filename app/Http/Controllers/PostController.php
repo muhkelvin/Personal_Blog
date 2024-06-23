@@ -8,10 +8,32 @@ use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
-    public function index(){
-        return view('Home.index',[
-            'posts' => Post::paginate(10),
-            'categories' => Category::all()
+    public function index(Request $request){
+        $query = Post::query();
+
+        if ($request->has('search')) {
+            $query->where('title', 'like', '%' . $request->search . '%')
+                ->orWhere('body', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->has('category') && $request->category) {
+            $query->where('category_id', $request->category);
+        }
+
+        if ($request->has('sort')) {
+            if ($request->sort == 'newest') {
+                $query->orderBy('created_at', 'desc');
+            } elseif ($request->sort == 'alphabetical') {
+                $query->orderBy('title', 'asc');
+            }
+        }
+
+        return view('Home.index', [
+            'posts' => $query->paginate(10),
+            'categories' => Category::all(),
+            'search' => $request->search,
+            'selectedCategory' => $request->category,
+            'selectedSort' => $request->sort
         ]);
     }
 
